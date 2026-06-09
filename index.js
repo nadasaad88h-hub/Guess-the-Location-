@@ -1,5 +1,3 @@
-
-
 const { 
     Client, 
     GatewayIntentBits, 
@@ -21,8 +19,7 @@ const client = new Client({
         GatewayIntentBits.GuildMessages, 
         GatewayIntentBits.MessageContent
     ],
-        partials: [Partials.Message, Partials.Channel, Partials.User, Partials.GuildMember] 
-
+    partials: [Partials.Message, Partials.Channel, Partials.User, Partials.GuildMember] 
 });
 
 const app = express();
@@ -78,6 +75,9 @@ function saveJSON(file, data) {
 // 🔢 COUNTING STATE CONTROLLERS
 let countState = loadJSON('./counting.json', { currentCount: 0, lastCounterId: null });
 let countingLock = false; 
+
+// Track automated bot deletions to prevent the ghost detector from firing on rule breakers
+const botDeletedMessageIds = new Set();
 
 // Safely delete messages without crashing on missing message objects
 async function safeDelete(channel, messageId) {
@@ -209,7 +209,6 @@ client.on('interactionCreate', async (interaction) => {
                 await msg.edit({ embeds: [updatedEmbed], components: [disabledRow] }).catch(() => {});
             }
 
-            // Fixed and closed the cut-off lines here
             const hintMsg = await interactionChannel.send({ 
                 content: `## *<@${interaction.user.id}> requested a hint!* \n**${currentRound.country.charAt(0)}...**`, 
                 allowedMentions: { parse: [] } 
@@ -252,17 +251,20 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ────────────────────────────────────────────────────────
-// ANTI-CHEAT CONTROLLER: WATCHES FOR EDITED MESSAGES
-// ────────────────────────────────────────────────────────
-// ────────────────────────────────────────────────────────
 // GHOST-DELETE DETECTOR: CALLS OUT ONLY THE LATEST NUMBER
 // ────────────────────────────────────────────────────────
 client.on('messageDelete', async (message) => {
     if (message.channelId !== countingChannelId) return;
 
     try {
-        // If it's an old/uncached message, ignore it completely
         if (message.partial) return;
+
+        // FIXED: If the bot intentionally deleted this message for rule breaking, ignore it!
+        if (botDeletedMessageIds.has(message.id)) {
+            botDeletedMessageIds.delete(message.id);
+            return;
+        }
+
         if (message.author?.bot) return;
 
         const inputString = message.content?.trim();
@@ -292,30 +294,32 @@ client.on('messageDelete', async (message) => {
     }
 });
 
+// ────────────────────────────────────────────────────────
+// ANTI-CHEAT CONTROLLER: WATCHES FOR EDITED MESSAGES
+// ────────────────────────────────────────────────────────
 client.on('messageUpdate', async (oldMessage, newMessage) => {
     if (newMessage.channelId !== countingChannelId) return;
     try {
-        // If it's an old/uncached message edit, ignore it completely
         if (newMessage.partial) return;
         if (newMessage.author?.bot) return;
         
-        await newMessage.delete().catch(() => {});
+        // Track the ID before deleting so the ghost detector ignores it
+        botDeletedMessageIds.add(newMessage.id);
+        await newMessage.delete().catch(() => {
+            botDeletedMessageIds.delete(newMessage.id);
+        });
     } catch (e) {}
 });
-
 
 // ────────────────────────────────────────────────────────
 // CORE ROUTER: ROUTE MESSAGES TO CORRECT GAME LISTENER
 // ────────────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
     if (message.author.id === client.user.id) return;
-
-    // Drops all Discord system messages (Pins, Server Boosts, Joins) immediately
     if (message.type !== 0) return; 
 
-
     // PATHWAY A: LOCATION CHANNEL
-    if (message.channel.id === locationChannelId) {
+    if (message.channelId === locationChannelId) {
         if (message.author.bot) {
             return message.delete().catch(() => {});
         }
@@ -358,7 +362,7 @@ client.on('messageCreate', async (message) => {
     }
 
     // PATHWAY B: COUNTING CHANNEL
-    if (message.channel.id === countingChannelId) {
+    if (message.channelId === countingChannelId) {
         if (message.author.bot) {
             return message.delete().catch(() => {});
         }
@@ -372,21 +376,30 @@ client.on('messageCreate', async (message) => {
         try {
             const inputString = message.content.trim();
             
+            // 1. Non-number text sent
             if (!/^\d+$/.test(inputString)) {
                 await message.react('❌').catch(() => {});
-                setTimeout(() => message.delete().catch(() => {}), 3000);
+                botDeletedMessageIds.add(message.id); // Register for safe bypass
+                setTimeout(() => {
+                    message.delete().catch(() => botDeletedMessageIds.delete(message.id));
+                }, 3000);
                 return;
             }
 
             const parsedNumber = parseInt(inputString, 10);
             const nextTargetNumber = countState.currentCount + 1;
 
+            // 2. User counted twice in a row
             if (message.author.id === countState.lastCounterId) {
                 await message.react('⚠️').catch(() => {});
-                setTimeout(() => message.delete().catch(() => {}), 3000);
+                botDeletedMessageIds.add(message.id); // Register for safe bypass
+                setTimeout(() => {
+                    message.delete().catch(() => botDeletedMessageIds.delete(message.id));
+                }, 3000);
                 return;
             }
 
+            // 3. Perfect match
             if (parsedNumber === nextTargetNumber) {
                 countState.currentCount = nextTargetNumber;
                 countState.lastCounterId = message.author.id;
@@ -400,9 +413,14 @@ client.on('messageCreate', async (message) => {
                 }
                 return;
             }
-
+            // 4. Wrong number input
             await message.react('❌').catch(() => {});
-            setTimeout(() => message.delete().catch(() => {}), 3000);
+            botDeletedMessageIds.add(message.id); // Register for safe bypass
+            setTimeout(() => {
+                message.delete().catch(() => botDeletedMessageIds.delete(message.id));
+            }, 3000);
+            return; // ✨ Add this to cleanly stop execution
+
 
         } catch (e) {
             console.error('Error handling counting system sequence:', e);

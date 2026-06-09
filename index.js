@@ -1,4 +1,17 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, REST, Routes, SlashCommandBuilder } = require('discord.js');
+
+
+const { 
+    Client, 
+    GatewayIntentBits, 
+    Partials, 
+    EmbedBuilder, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    REST, 
+    Routes, 
+    SlashCommandBuilder 
+} = require('discord.js');
 const express = require('express');
 const fs = require('fs');
 
@@ -7,12 +20,13 @@ const client = new Client({
         GatewayIntentBits.Guilds, 
         GatewayIntentBits.GuildMessages, 
         GatewayIntentBits.MessageContent
-    ] 
+    ],
+        partials: [Partials.Message, Partials.Channel, Partials.User, Partials.GuildMember] 
+
 });
 
 const app = express();
 app.get('/', (req, res) => res.send('Guess The Location & Counting Engines Active.'));
-app.listen(process.env.PORT || 3000);
 
 // ⚙️ GAME CHANNEL CONFIGURATIONS
 const locationChannelId = '1506139329536327765'; 
@@ -32,6 +46,7 @@ const pool = [
 
 // 🎮 LOCATION STATE CONTROLLERS
 let currentRound = {
+    id: 0, 
     country: '',
     url: '',
     pointsValue: 2,
@@ -64,31 +79,46 @@ function saveJSON(file, data) {
 let countState = loadJSON('./counting.json', { currentCount: 0, lastCounterId: null });
 let countingLock = false; 
 
+// Safely delete messages without crashing on missing message objects
+async function safeDelete(channel, messageId) {
+    if (!channel || !messageId) return;
+    try {
+        const msg = await channel.messages.fetch(messageId).catch(() => null);
+        if (msg) await msg.delete().catch(() => {});
+    } catch (e) {}
+}
+
 // ────────────────────────────────────────────────────────
 // LOCATION GAME ENGINE: ROUND MANAGER
 // ────────────────────────────────────────────────────────
 async function startNewRound(channel) {
-    const selection = pool[Math.floor(Math.random() * pool.length)];
-    currentRound.country = selection.country;
-    currentRound.url = selection.url;
-    currentRound.pointsValue = 2;
-    currentRound.active = true;
-    currentRound.hintMessageId = null;
-    currentRound.processingPayout = false; 
+    if (!channel) return;
+    try {
+        const selection = pool[Math.floor(Math.random() * pool.length)];
+        currentRound.id = Date.now(); 
+        currentRound.country = selection.country;
+        currentRound.url = selection.url;
+        currentRound.pointsValue = 2;
+        currentRound.active = true;
+        currentRound.hintMessageId = null;
+        currentRound.processingPayout = false; 
 
-    const gameEmbed = new EmbedBuilder()
-        .setColor('#5865F2')
-        .setTitle('🌎 Guess the place!')
-        .setDescription('First person to guess correctly gets **2 Points!**')
-        .setImage(selection.url);
+        const gameEmbed = new EmbedBuilder()
+            .setColor('#5865F2')
+            .setTitle('🌎 Guess the place!')
+            .setDescription('First person to guess correctly gets **2 Points!**')
+            .setImage(selection.url);
 
-    const interactiveRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('game_hint').setLabel('Hint').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('game_skip').setLabel('Skip').setStyle(ButtonStyle.Danger)
-    );
+        const interactiveRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('game_hint').setLabel('Hint').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('game_skip').setLabel('Skip').setStyle(ButtonStyle.Danger)
+        );
 
-    const msg = await channel.send({ embeds: [gameEmbed], components: [interactiveRow] });
-    currentRound.mainMessageId = msg.id;
+        const msg = await channel.send({ embeds: [gameEmbed], components: [interactiveRow] });
+        currentRound.mainMessageId = msg.id;
+    } catch (err) {
+        console.error('Failed to spin up a new round:', err);
+    }
 }
 
 // ────────────────────────────────────────────────────────
@@ -112,18 +142,17 @@ client.once('ready', async () => {
     }
     
     try {
-        const locationChannel = await client.channels.fetch(locationChannelId);
-        if (locationChannel) {
-            const messages = await locationChannel.messages.fetch({ limit: 15 });
-            const botMessages = messages.filter(m => m.author.id === client.user.id);
-            const purgeQueue = [];
-            
-            for (const m of botMessages.values()) {
-                if (Date.now() - m.createdTimestamp < 1209600000) {
-                    purgeQueue.push(m.delete().catch(() => {}));
+        const locationChannel = await client.channels.fetch(locationChannelId).catch(() => null);
+        if (locationChannel && locationChannel.isTextBased()) {
+            const messages = await locationChannel.messages.fetch({ limit: 15 }).catch(() => []);
+            if (messages.size > 0) {
+                const botMessages = messages.filter(m => m.author.id === client.user.id);
+                for (const m of botMessages.values()) {
+                    if (Date.now() - m.createdTimestamp < 1209600000) {
+                        await m.delete().catch(() => {});
+                    }
                 }
             }
-            await Promise.all(purgeQueue);
             await startNewRound(locationChannel);
         }
     } catch (e) {
@@ -135,73 +164,90 @@ client.once('ready', async () => {
 // INTERACTION CONTROLLER (BUTTONS & LEADERBOARDS)
 // ────────────────────────────────────────────────────────
 client.on('interactionCreate', async (interaction) => {
-    if (interaction.isChatInputCommand() && interaction.commandName === 'check_leaderboard') {
-        const scores = loadJSON('./leaderboard.json');
-        const sorted = Object.entries(scores)
-            .map(([userId, pts]) => ({ userId, pts }))
-            .sort((a, b) => b.pts - a.pts)
-            .slice(0, 10);
+    try {
+        if (interaction.isChatInputCommand() && interaction.commandName === 'check_leaderboard') {
+            const scores = loadJSON('./leaderboard.json');
+            const sorted = Object.entries(scores)
+                .map(([userId, pts]) => ({ userId, pts }))
+                .sort((a, b) => b.pts - a.pts)
+                .slice(0, 10);
 
-        if (sorted.length === 0) {
-            return interaction.reply({ content: '🏜️ The leaderboard is currently empty!', ephemeral: false });
+            if (sorted.length === 0) {
+                return interaction.reply({ content: '🏜️ The leaderboard is currently empty!', ephemeral: false });
+            }
+
+            const leaderboardEmbed = new EmbedBuilder().setColor('#FEE75C').setTitle('🏆 Guess the Location Leaderboard');
+            let rowsText = '';
+            const medals = ['🏆1', '🥈2', '🥉3', '4', '5', '6', '7', '8', '9', '10'];
+            sorted.forEach((player, index) => {
+                rowsText += `**${medals[index]}.** <@${player.userId}> — \`${player.pts} Points\`\n`;
+            });
+            leaderboardEmbed.setDescription(rowsText);
+            return interaction.reply({ embeds: [leaderboardEmbed] });
         }
 
-        const leaderboardEmbed = new EmbedBuilder().setColor('#FEE75C').setTitle('🏆 Guess the Location Leaderboard');
-        let rowsText = '';
-        const medals = ['🏆1', '🥈2', '🥉3', '4', '5', '6', '7', '8', '9', '10'];
-        sorted.forEach((player, index) => {
-            rowsText += `**${medals[index]}.** <@${player.userId}> — \`${player.pts} Points\`\n`;
-        });
-        leaderboardEmbed.setDescription(rowsText);
-        return interaction.reply({ embeds: [leaderboardEmbed] });
-    }
-
-    if (!interaction.isButton()) return;
-    const interactionChannel = interaction.channel;
-    if (interactionChannel.id !== locationChannelId) return;
-
-    if (interaction.customId === 'game_hint') {
-        if (!currentRound.active || currentRound.processingPayout) return interaction.deferUpdate();
+        if (!interaction.isButton()) return;
         
-        await interaction.deferUpdate().catch(() => {});
-        currentRound.pointsValue = 1; 
+        const interactionChannel = interaction.channel;
+        if (!interactionChannel || interactionChannel.id !== locationChannelId) return;
 
-        const msg = await interactionChannel.messages.fetch(currentRound.mainMessageId).catch(() => null);
-        if (msg) {
-            const updatedEmbed = EmbedBuilder.from(msg.embeds[0]).setDescription('First person to guess correctly gets **1 Point!**');
-            const disabledRow = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('game_hint_given').setLabel('Hint Given').setStyle(ButtonStyle.Secondary).setDisabled(true),
-                new ButtonBuilder().setCustomId('game_skip').setLabel('Skip').setStyle(ButtonStyle.Danger)
-            );
-            await msg.edit({ embeds: [updatedEmbed], components: [disabledRow] }).catch(() => {});
+        if (interaction.customId === 'game_hint') {
+            if (!currentRound.active || currentRound.processingPayout) {
+                return interaction.deferUpdate().catch(() => {});
+            }
+            
+            await interaction.deferUpdate().catch(() => {});
+            currentRound.pointsValue = 1; 
+
+            const msg = await interactionChannel.messages.fetch(currentRound.mainMessageId).catch(() => null);
+            if (msg) {
+                const updatedEmbed = EmbedBuilder.from(msg.embeds[0]).setDescription('First person to guess correctly gets **1 Point!**');
+                const disabledRow = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('game_hint_given').setLabel('Hint Given').setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId('game_skip').setLabel('Skip').setStyle(ButtonStyle.Danger)
+                );
+                await msg.edit({ embeds: [updatedEmbed], components: [disabledRow] }).catch(() => {});
+            }
+
+            // Fixed and closed the cut-off lines here
+            const hintMsg = await interactionChannel.send({ 
+                content: `## *<@${interaction.user.id}> requested a hint!* \n**${currentRound.country.charAt(0)}...**`, 
+                allowedMentions: { parse: [] } 
+            }).catch(() => null);
+            
+            if (hintMsg) currentRound.hintMessageId = hintMsg.id;
+            return;
         }
 
-        const hintMsg = await interactionChannel.send({ content: `## *<@${interaction.user.id}> requested a hint!*\n**${currentRound.country.charAt(0)}**`, allowedMentions: { parse: [] } });
-        currentRound.hintMessageId = hintMsg.id;
-        return;
-    }
+        if (interaction.customId === 'game_skip') {
+            if (!currentRound.active || currentRound.processingPayout) {
+                return interaction.deferUpdate().catch(() => {});
+            }
 
-    if (interaction.customId === 'game_skip') {
-        const uId = interaction.user.id;
-        const now = Date.now();
-        if (!skipTrackers[uId]) skipTrackers[uId] = [];
-        skipTrackers[uId] = skipTrackers[uId].filter(t => now - t < 3600000);
+            const uId = interaction.user.id;
+            const now = Date.now();
+            if (!skipTrackers[uId]) skipTrackers[uId] = [];
+            skipTrackers[uId] = skipTrackers[uId].filter(t => now - t < 3600000);
 
-        if (skipTrackers[uId].length >= 3) {
-            return interaction.reply({ content: `⚠️ Skip limit reached! Try again <t:${Math.floor((skipTrackers[uId][0] + 3600000) / 1000)}:R>.`, ephemeral: true });
+            if (skipTrackers[uId].length >= 3) {
+                return interaction.reply({ content: `⚠️ Skip limit reached! Try again <t:${Math.floor((skipTrackers[uId][0] + 3600000) / 1000)}:R>.`, ephemeral: true });
+            }
+
+            await interaction.deferUpdate().catch(() => {});
+            skipTrackers[uId].push(now);
+            currentRound.active = false;
+            
+            const targetMainId = currentRound.mainMessageId;
+            const targetHintId = currentRound.hintMessageId;
+            
+            await safeDelete(interactionChannel, targetMainId);
+            await safeDelete(interactionChannel, targetHintId);
+            
+            await startNewRound(interactionChannel);
+            return;
         }
-
-        await interaction.deferUpdate().catch(() => {});
-        skipTrackers[uId].push(now);
-        currentRound.active = false;
-        
-        const targetMainId = currentRound.mainMessageId;
-        const targetHintId = currentRound.hintMessageId;
-        
-        if (targetMainId) await interactionChannel.messages.delete(targetMainId).catch(() => {});
-        if (targetHintId) await interactionChannel.messages.delete(targetHintId).catch(() => {});
-        await startNewRound(interactionChannel);
-        return;
+    } catch (interErr) {
+        console.error('Handled Interaction Error gracefully:', interErr);
     }
 });
 
@@ -210,9 +256,8 @@ client.on('interactionCreate', async (interaction) => {
 // ────────────────────────────────────────────────────────
 client.on('messageUpdate', async (oldMessage, newMessage) => {
     if (newMessage.channel.id !== countingChannelId) return;
-
-    // Instantly vaporize edited messages inside the counting channel
     try {
+        if (newMessage.partial) await newMessage.fetch();
         await newMessage.delete().catch(() => {});
     } catch (e) {}
 });
@@ -221,12 +266,14 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 // CORE ROUTER: ROUTE MESSAGES TO CORRECT GAME LISTENER
 // ────────────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
-    // If your own bot sent it, ignore completely to prevent recursion loops
     if (message.author.id === client.user.id) return;
+
+    // Drops all Discord system messages (Pins, Server Boosts, Joins) immediately
+    if (message.type !== 0) return; 
+
 
     // PATHWAY A: LOCATION CHANNEL
     if (message.channel.id === locationChannelId) {
-        // Prevent other bots from cluttering the guessing stream
         if (message.author.bot) {
             return message.delete().catch(() => {});
         }
@@ -239,6 +286,7 @@ client.on('messageCreate', async (message) => {
         const solution = currentRound.country.toLowerCase();
 
         if (guess === solution) {
+            const capturedRoundId = currentRound.id;
             currentRound.active = false; 
             currentRound.processingPayout = true; 
             try {
@@ -251,14 +299,10 @@ client.on('messageCreate', async (message) => {
                 const targetHintId = currentRound.hintMessageId;
 
                 setTimeout(async () => {
-                    const cleanup = [message.delete().catch(() => {})];
-                    if (targetMainId) {
-                        cleanup.push(message.channel.messages.fetch(targetMainId).then(m => m.delete()).catch(() => {}));
-                    }
-                    if (targetHintId) {
-                        cleanup.push(message.channel.messages.fetch(targetHintId).then(m => m.delete()).catch(() => {}));
-                    }
-                    await Promise.all(cleanup);
+                    if (currentRound.id !== capturedRoundId) return;
+                    await message.delete().catch(() => {});
+                    await safeDelete(message.channel, targetMainId);
+                    await safeDelete(message.channel, targetHintId);
                     await startNewRound(message.channel);
                 }, 1500);
             } catch (err) {}
@@ -273,7 +317,6 @@ client.on('messageCreate', async (message) => {
 
     // PATHWAY B: COUNTING CHANNEL
     if (message.channel.id === countingChannelId) {
-        // Goodbye, automated hourly spam bots!
         if (message.author.bot) {
             return message.delete().catch(() => {});
         }
@@ -287,42 +330,35 @@ client.on('messageCreate', async (message) => {
         try {
             const inputString = message.content.trim();
             
-            // RULE 1: Pure digits check
             if (!/^\d+$/.test(inputString)) {
                 await message.react('❌').catch(() => {});
                 setTimeout(() => message.delete().catch(() => {}), 3000);
-                countingLock = false; 
                 return;
             }
 
             const parsedNumber = parseInt(inputString, 10);
             const nextTargetNumber = countState.currentCount + 1;
 
-            // RULE 2: Double-Count Violation
             if (message.author.id === countState.lastCounterId) {
                 await message.react('⚠️').catch(() => {});
                 setTimeout(() => message.delete().catch(() => {}), 3000);
-                countingLock = false; 
                 return;
             }
 
-            // RULE 3: Valid Sequential Count Entry
             if (parsedNumber === nextTargetNumber) {
                 countState.currentCount = nextTargetNumber;
                 countState.lastCounterId = message.author.id;
                 saveJSON('./counting.json', countState);
 
                 const reaction = await message.react('✅').catch(() => {});
-                if (reaction && reaction.users) {
+                if (reaction) {
                     setTimeout(async () => {
                         await reaction.users.remove(client.user.id).catch(() => {});
                     }, 3000); 
                 }
-                countingLock = false; 
                 return;
             }
 
-            // RULE 4: Incorrect Number Choice (No Reset)
             await message.react('❌').catch(() => {});
             setTimeout(() => message.delete().catch(() => {}), 3000);
 
@@ -331,6 +367,18 @@ client.on('messageCreate', async (message) => {
         } finally {
             countingLock = false; 
         }
+    }
+});
+
+const server = app.listen(process.env.PORT || 3000, () => {
+    console.log('🌐 Web Dashboard server online.');
+});
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.log('⚠️ Web port busy. Proceeding to connect Discord engines regardless...');
+    } else {
+        console.error('Web server unexpected event:', err);
     }
 });
 

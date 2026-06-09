@@ -254,13 +254,55 @@ client.on('interactionCreate', async (interaction) => {
 // ────────────────────────────────────────────────────────
 // ANTI-CHEAT CONTROLLER: WATCHES FOR EDITED MESSAGES
 // ────────────────────────────────────────────────────────
-client.on('messageUpdate', async (oldMessage, newMessage) => {
-    if (newMessage.channel.id !== countingChannelId) return;
+// ────────────────────────────────────────────────────────
+// GHOST-DELETE DETECTOR: CALLS OUT ONLY THE LATEST NUMBER
+// ────────────────────────────────────────────────────────
+client.on('messageDelete', async (message) => {
+    if (message.channelId !== countingChannelId) return;
+
     try {
-        if (newMessage.partial) await newMessage.fetch();
+        // If it's an old/uncached message, ignore it completely
+        if (message.partial) return;
+        if (message.author?.bot) return;
+
+        const inputString = message.content?.trim();
+        
+        if (inputString && /^\d+$/.test(inputString)) {
+            const targetChannel = await client.channels.fetch(countingChannelId).catch(() => null);
+            if (!targetChannel) return;
+
+            const recentMessages = await targetChannel.messages.fetch({ limit: 5 }).catch(() => null);
+            if (recentMessages && recentMessages.size > 0) {
+                const absoluteLatestMessage = recentMessages.first();
+                
+                if (absoluteLatestMessage && absoluteLatestMessage.createdTimestamp > message.createdTimestamp) {
+                    return; 
+                }
+            }
+
+            const userPing = message.author ? `<@${message.author.id}>` : 'Someone';
+
+            await targetChannel.send({
+                content: `${userPing}: ${inputString}`,
+                allowedMentions: { parse: ['users'] }
+            });
+        }
+    } catch (e) {
+        console.error('Error handling smart ghost-delete detector:', e);
+    }
+});
+
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+    if (newMessage.channelId !== countingChannelId) return;
+    try {
+        // If it's an old/uncached message edit, ignore it completely
+        if (newMessage.partial) return;
+        if (newMessage.author?.bot) return;
+        
         await newMessage.delete().catch(() => {});
     } catch (e) {}
 });
+
 
 // ────────────────────────────────────────────────────────
 // CORE ROUTER: ROUTE MESSAGES TO CORRECT GAME LISTENER

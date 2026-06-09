@@ -42,7 +42,7 @@ let currentRound = {
 };
 let skipTrackers = {}; 
 
-// 📦 Helper: Database File Handlers
+// 📦 Helper: Database File Handlers with Race Protection
 const writeQueues = {};
 function loadJSON(file, defaultData = {}) {
     try {
@@ -59,7 +59,6 @@ function saveJSON(file, data) {
         return fs.promises.writeFile(file, JSON.stringify(data, null, 4), 'utf8').catch(() => {});
     });
 }
-
 
 // 🔢 COUNTING STATE CONTROLLERS
 let countState = loadJSON('./counting.json', { currentCount: 0, lastCounterId: null });
@@ -111,7 +110,8 @@ client.once('ready', async () => {
     } catch (cmdErr) {
         console.error('Failed to register slash commands:', cmdErr);
     }
-        try {
+    
+    try {
         const locationChannel = await client.channels.fetch(locationChannelId);
         if (locationChannel) {
             const messages = await locationChannel.messages.fetch({ limit: 15 });
@@ -127,8 +127,6 @@ client.once('ready', async () => {
             await startNewRound(locationChannel);
         }
     } catch (e) {
-
-    
         console.error('Error initiating location engine:', e);
     }
 });
@@ -208,13 +206,31 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ────────────────────────────────────────────────────────
+// ANTI-CHEAT CONTROLLER: WATCHES FOR EDITED MESSAGES
+// ────────────────────────────────────────────────────────
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+    if (newMessage.channel.id !== countingChannelId) return;
+
+    // Instantly vaporize edited messages inside the counting channel
+    try {
+        await newMessage.delete().catch(() => {});
+    } catch (e) {}
+});
+
+// ────────────────────────────────────────────────────────
 // CORE ROUTER: ROUTE MESSAGES TO CORRECT GAME LISTENER
 // ────────────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
+    // If your own bot sent it, ignore completely to prevent recursion loops
+    if (message.author.id === client.user.id) return;
 
     // PATHWAY A: LOCATION CHANNEL
     if (message.channel.id === locationChannelId) {
+        // Prevent other bots from cluttering the guessing stream
+        if (message.author.bot) {
+            return message.delete().catch(() => {});
+        }
+
         if (!currentRound.active || currentRound.processingPayout) {
             return setTimeout(() => message.delete().catch(() => {}), 500);
         }
@@ -255,8 +271,13 @@ client.on('messageCreate', async (message) => {
         } catch (e) {}
     }
 
-    // PATHWAY B: COUNTING CHANNEL (Continuous Loop)
+    // PATHWAY B: COUNTING CHANNEL
     if (message.channel.id === countingChannelId) {
+        // Goodbye, automated hourly spam bots!
+        if (message.author.bot) {
+            return message.delete().catch(() => {});
+        }
+
         if (countingLock) {
             return message.delete().catch(() => {}); 
         }
@@ -270,7 +291,7 @@ client.on('messageCreate', async (message) => {
             if (!/^\d+$/.test(inputString)) {
                 await message.react('❌').catch(() => {});
                 setTimeout(() => message.delete().catch(() => {}), 3000);
-                countingLock = false; // Manually reset lock before returning
+                countingLock = false; 
                 return;
             }
 
@@ -281,7 +302,7 @@ client.on('messageCreate', async (message) => {
             if (message.author.id === countState.lastCounterId) {
                 await message.react('⚠️').catch(() => {});
                 setTimeout(() => message.delete().catch(() => {}), 3000);
-                countingLock = false; // Manually reset lock before returning
+                countingLock = false; 
                 return;
             }
 
@@ -297,7 +318,7 @@ client.on('messageCreate', async (message) => {
                         await reaction.users.remove(client.user.id).catch(() => {});
                     }, 3000); 
                 }
-                countingLock = false; // Reset lock for next counter
+                countingLock = false; 
                 return;
             }
 

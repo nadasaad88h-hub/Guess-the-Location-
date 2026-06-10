@@ -29,18 +29,94 @@ app.get('/', (req, res) => res.send('Guess The Location & Counting Engines Activ
 const locationChannelId = '1506139329536327765'; 
 const countingChannelId = '1513457479042990100'; 
 const staffRoleId = '1514130861568819242'; 
-
-// 🌎 LOCATION GAME POOL
+// 🌎 VERIFIED & EXTREMELY DIFFICULT LOCATION GAME POOL
 const pool = [
-    { country: 'France', url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
-    { country: 'China', url: 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=800' },
-    { country: 'Japan', url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800' },
-    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=800' },
-    { country: 'America', url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800' },
-    { country: 'Russia', url: 'https://images.unsplash.com/photo-1512495039889-52a3b799c9bc?w=800' },
-    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1512813583145-baaa340ef29f?w=800' },
-    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?w=800' }
+    // 🇫🇷 FRANCE (Ambiguous Regional)
+    { country: 'France', url: 'https://images.unsplash.com/photo-1549144511-f099e773c147?w=800' }, // Rural regional French road
+    { country: 'France', url: 'https://images.unsplash.com/photo-1505944270255-72b8c68c6a70?w=800' }, // Lavender farm road lookup
+
+    // 🇨🇳 CHINA (Hyper-Specific Hidden Elements)
+    { country: 'China', url: 'https://images.unsplash.com/photo-1543097692-fa13c6cd8595?w=800' }, // Misty mountain river landscape
+    { country: 'China', url: 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=800' }, // Traditional rural village rooftops
+
+    // 🇯🇵 JAPAN (Suburban Subtleties)
+    { country: 'Japan', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800' }, // Ordinary neighborhood corner street
+    { country: 'Japan', url: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=800' }, // Foggy mountain bamboo tree path
+
+    // 🇪🇬 EGYPT (Local Domestic Infrastructure)
+    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1553913861-c0fddf2619ee?w=800' }, // Local urban market alleyway
+    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1608958416715-689e47266170?w=800' }, // Deep Sinai desert valley pass
+
+    // 🇺🇸 AMERICA (Generic Wilderness)
+    { country: 'America', url: 'https://images.unsplash.com/photo-1508849789987-4e5333c12b78?w=800' }, // Endless flat plain highway line
+    { country: 'America', url: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800' }, // Dense misty pine/redwood road
+
+    // 🇷🇺 RUSSIA (Vast Environments)
+    { country: 'Russia', url: 'https://images.unsplash.com/photo-1512495039889-52a3b799c9bc?w=800' }, // Abstract city architecture grid
+    { country: 'Russia', url: 'https://images.unsplash.com/photo-1547448415-e9f5b28e570d?w=800' }, // Isolation birch trees by frozen stream
+
+    // 🇲🇽 MEXICO (Colonial Architecture)
+    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1568402102990-bc541580b59f?w=800' }, // Steep colorful hillside path
+    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1512813583145-baaa340ef29f?w=800' }, // Arid scrubland road line
+
+    // 🇲🇦 MOROCCO (Desert Cities)
+    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?w=800' }, // Classic ancient plaster entry paths
+    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1542128889-1bc41ef6f092?w=800' }, // Earthen mountain fortress ruins
+
+    // 🇧🇩 BANGLADESH (Rivers & Urban Density)
+    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800' }, // Dense gathering of river transport boats
+    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1622213199653-ec5277864aa9?w=800' }, // Rural delta swamp terrain
+    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1585938338392-50a5d2228847?w=800' }, // Local bicycle-rickshaw city intersection
+
+    // 🇴🇲 OMAN (Middle Eastern Rocky Desert)
+    { country: 'Oman', url: 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=800' }, // Hidden limestone mountain canyon stream
+    { country: 'Oman', url: 'https://images.unsplash.com/photo-1518330776483-db96df67a9fb?w=800' }, // Ocean-adjacent sand dune desert highway
+
+    // 🇲🇳 MONGOLIA (The Bare Steppe Void)
+    { country: 'Mongolia', url: 'https://images.unsplash.com/photo-1527838832700-50592524df75?w=800' }, // Infinite open grassy plains dirt road
+    { country: 'Mongolia', url: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=800' }, // Isolated traditional tents out in the open
+
+    // 🇵🇪 PERU (The High Andes Range)
+    { country: 'Peru', url: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800' }, // Alpine dirt mountain switchbacks
+    { country: 'Peru', url: 'https://images.unsplash.com/photo-1580619305218-8423a7f79510?w=800' }, // Stone structural ruins in high valleys
+
+    // 🇮🇸 ICELAND (Nordic Volcanic)
+    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1504893524553-ac55fce698be?w=800' }, // Rough volcanic moss lava plain
+    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800' }, // Dark foggy glacial lake bay
+
+    // 🇻🇳 VIETNAM (Southeast Asian Topography)
+    { country: 'Vietnam', url: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800' }, // Massive green hill agricultural fields
+    { country: 'Vietnam', url: 'https://images.unsplash.com/photo-1509060464153-44667396260f?w=800' }, // Packed inner-city scooter traffic downpour
+
+    // 🇨🇭 SWITZERLAND (Alpine European)
+    { country: 'Switzerland', url: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?w=800' }, // Pine forest mountain river pass
+    { country: 'Switzerland', url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800' }, // Hidden cabins under shear mountain peaks
+
+    // 🇯🇴 JORDAN (Sandstone Formations)
+    { country: 'Jordan', url: 'https://images.unsplash.com/photo-1547234935-80c7145ec969?w=800' }, // Intense red-sand desert canyon cliffs
+
+    // 🇨🇦 CANADA (Subarctic Wilderness Trap)
+    { country: 'Canada', url: 'https://images.unsplash.com/photo-1507608869274-d3177c8bb4c7?w=800' }, // Frozen cold lake surrounded by evergreen trees
+
+    // 🇦🇺 AUSTRALIA (The Deep Outback)
+    { country: 'Australia', url: 'https://images.unsplash.com/photo-1529108190281-9a4f620bc2d8?w=800' }, // Empty straight dark red dirt road
+
+    // 🇧🇷 BRAZIL (Massive Metropolises)
+    { country: 'Brazil', url: 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800' }, // Endless horizon of concrete apartments
+
+    // 🇧🇹 BHUTAN (Himalayan Architecture - Brand New Master Trap!)
+    { country: 'Bhutan', url: 'https://images.unsplash.com/photo-1548686304-89d1030d3078?w=800' }, // Traditional mountain monastery fortress cliffs
+
+    // 🇰🇪 KENYA (East African Savanna - Brand New!)
+    { country: 'Kenya', url: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800' }, // Lone acacia tree in golden tall grass valley
+
+    // 🇦🇱 ALBANIA (Balkan Architecture Blend - Brand New!)
+    { country: 'Albania', url: 'https://images.unsplash.com/photo-1600623399062-fa5df3890a59?w=800' }, // Historic white Ottoman stone window houses
+
+    // 🇨🇱 CHILE (Patagonian Fjords - Brand New!)
+    { country: 'Chile', url: 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?w=800' }  // Jagged granite spires over a glacial bay lake
 ];
+
 
 // 🎮 LOCATION STATE CONTROLLERS
 let lastPickedCountry = ''; // Prevents the same country from appearing twice in a row
@@ -76,7 +152,7 @@ function saveJSON(file, data) {
 }
 
 // 🔢 COUNTING STATE CONTROLLERS
-let countState = loadJSON('./counting.json', { currentCount: 32, lastCounterId: null });
+let countState = loadJSON('./counting.json', { currentCount: 55, lastCounterId: null });
 let countingLock = false; 
 
 // Track automated bot deletions to prevent the ghost detector from firing on rule breakers

@@ -74,7 +74,7 @@ function saveJSON(file, data) {
 }
 
 // 🔢 COUNTING STATE CONTROLLERS
-let countState = loadJSON('./counting.json', { currentCount: 0, lastCounterId: null });
+let countState = loadJSON('./counting.json', { currentCount: 29, lastCounterId: null });
 let countingLock = false; 
 
 // Track automated bot deletions to prevent the ghost detector from firing on rule breakers

@@ -43,6 +43,8 @@ const pool = [
 ];
 
 // 🎮 LOCATION STATE CONTROLLERS
+let lastPickedCountry = ''; // Prevents the same country from appearing twice in a row
+
 let currentRound = {
     id: 0, 
     country: '',
@@ -95,7 +97,13 @@ async function safeDelete(channel, messageId) {
 async function startNewRound(channel) {
     if (!channel) return;
     try {
-        const selection = pool[Math.floor(Math.random() * pool.length)];
+       let selection;
+do {
+    selection = pool[Math.floor(Math.random() * pool.length)];
+} while (selection.country === lastPickedCountry && pool.length > 1);
+
+lastPickedCountry = selection.country; // Update the history tracker
+
         currentRound.id = Date.now(); 
         currentRound.country = selection.country;
         currentRound.url = selection.url;
@@ -383,11 +391,13 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
-        try {
+               try {
             await message.react('❌').catch(() => {});
             setTimeout(() => message.delete().catch(() => {}), 3000);
         } catch (e) {}
+        return; // Stops the event handler early since the wrong guess was already managed
     }
+
 
     // PATHWAY B: COUNTING CHANNEL
     if (message.channelId === countingChannelId) {

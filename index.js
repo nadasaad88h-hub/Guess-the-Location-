@@ -25,9 +25,10 @@ const client = new Client({
 const app = express();
 app.get('/', (req, res) => res.send('Guess The Location & Counting Engines Active.'));
 
-// ⚙️ GAME CHANNEL CONFIGURATIONS
+// ⚙️ GAME CHANNEL & ROLE CONFIGURATIONS
 const locationChannelId = '1506139329536327765'; 
 const countingChannelId = '1513457479042990100'; 
+const staffRoleId = '1514130861568819242'; 
 
 // 🌎 LOCATION GAME POOL
 const pool = [
@@ -132,7 +133,10 @@ client.once('ready', async () => {
         const commands = [
             new SlashCommandBuilder()
                 .setName('check_leaderboard')
-                .setDescription('View the top 10 players on the Location Leaderboard')
+                .setDescription('View the top 10 players on the Location Leaderboard'),
+            new SlashCommandBuilder()
+                .setName('restart_game')
+                .setDescription('Force-skips the current location round (Staff Only)')
         ].map(command => command.toJSON());
 
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
@@ -165,25 +169,46 @@ client.once('ready', async () => {
 // ────────────────────────────────────────────────────────
 client.on('interactionCreate', async (interaction) => {
     try {
-        if (interaction.isChatInputCommand() && interaction.commandName === 'check_leaderboard') {
-            const scores = loadJSON('./leaderboard.json');
-            const sorted = Object.entries(scores)
-                .map(([userId, pts]) => ({ userId, pts }))
-                .sort((a, b) => b.pts - a.pts)
-                .slice(0, 10);
+        if (interaction.isChatInputCommand()) {
+            if (interaction.commandName === 'check_leaderboard') {
+                const scores = loadJSON('./leaderboard.json');
+                
+                const sorted = Object.entries(scores)
+                    .map(([userId, pts]) => ({ userId, pts: Number(pts) }))
+                    .sort((a, b) => b.pts - a.pts)
+                    .slice(0, 10);
 
-            if (sorted.length === 0) {
-                return interaction.reply({ content: '🏜️ The leaderboard is currently empty!', ephemeral: false });
+                if (sorted.length === 0) {
+                    return interaction.reply({ content: '🏜️ The leaderboard is currently empty!', ephemeral: false });
+                }
+
+                const leaderboardEmbed = new EmbedBuilder().setColor('#FEE75C').setTitle('🏆 Guess the Location Leaderboard');
+                let rowsText = '';
+                const medals = ['🏆1', '🥈2', '🥉3', '4', '5', '6', '7', '8', '9', '10'];
+                sorted.forEach((player, index) => {
+                    rowsText += `**${medals[index]}.** <@${player.userId}> — \`${player.pts} Points\`\n`;
+                });
+                leaderboardEmbed.setDescription(rowsText);
+                return interaction.reply({ embeds: [leaderboardEmbed] });
             }
 
-            const leaderboardEmbed = new EmbedBuilder().setColor('#FEE75C').setTitle('🏆 Guess the Location Leaderboard');
-            let rowsText = '';
-            const medals = ['🏆1', '🥈2', '🥉3', '4', '5', '6', '7', '8', '9', '10'];
-            sorted.forEach((player, index) => {
-                rowsText += `**${medals[index]}.** <@${player.userId}> — \`${player.pts} Points\`\n`;
-            });
-            leaderboardEmbed.setDescription(rowsText);
-            return interaction.reply({ embeds: [leaderboardEmbed] });
+            if (interaction.commandName === 'restart_game') {
+                if (!interaction.member.roles.cache.has(staffRoleId)) {
+                    return interaction.reply({ content: '⚠️ You do not have the required staff role to run this command.', ephemeral: true });
+                }
+
+                // FIX: Complete state release on forceful engine clear
+                currentRound.active = false;
+                currentRound.processingPayout = false;
+                const interactionChannel = interaction.channel;
+                
+                await safeDelete(interactionChannel, currentRound.mainMessageId);
+                await safeDelete(interactionChannel, currentRound.hintMessageId);
+                
+                await interaction.reply({ content: '🔄 Staff member forced a round restart. Spinning up a new location...', ephemeral: true });
+                await startNewRound(interactionChannel);
+                return;
+            }
         }
 
         if (!interaction.isButton()) return;
@@ -259,7 +284,6 @@ client.on('messageDelete', async (message) => {
     try {
         if (message.partial) return;
 
-        // FIXED: If the bot intentionally deleted this message for rule breaking, ignore it!
         if (botDeletedMessageIds.has(message.id)) {
             botDeletedMessageIds.delete(message.id);
             return;
@@ -303,7 +327,6 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
         if (newMessage.partial) return;
         if (newMessage.author?.bot) return;
         
-        // Track the ID before deleting so the ghost detector ignores it
         botDeletedMessageIds.add(newMessage.id);
         await newMessage.delete().catch(() => {
             botDeletedMessageIds.delete(newMessage.id);
@@ -316,7 +339,9 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 // ────────────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
     if (message.author.id === client.user.id) return;
-    if (message.type !== 0) return; 
+    
+    // FIX: Allow Default messages (0) and Inline Replies (19) to feed through game listeners
+    if (message.type !== 0 && message.type !== 19) return; 
 
     // PATHWAY A: LOCATION CHANNEL
     if (message.channelId === locationChannelId) {
@@ -328,7 +353,8 @@ client.on('messageCreate', async (message) => {
             return setTimeout(() => message.delete().catch(() => {}), 500);
         }
          
-        const guess = message.content.trim().toLowerCase();
+        const cleanContent = message.content.replace(/<@!?\d+>/g, '').trim();
+        const guess = cleanContent.toLowerCase();
         const solution = currentRound.country.toLowerCase();
 
         if (guess === solution) {
@@ -338,7 +364,9 @@ client.on('messageCreate', async (message) => {
             try {
                 await message.react('✅').catch(() => {});
                 const leaderboard = loadJSON('./leaderboard.json');
-                leaderboard[message.author.id] = (leaderboard[message.author.id] || 0) + currentRound.pointsValue;
+                
+                const userCurrentScore = leaderboard[message.author.id] ? Number(leaderboard[message.author.id]) : 0;
+                leaderboard[message.author.id] = userCurrentScore + currentRound.pointsValue;
                 saveJSON('./leaderboard.json', leaderboard);
 
                 const targetMainId = currentRound.mainMessageId;
@@ -376,10 +404,9 @@ client.on('messageCreate', async (message) => {
         try {
             const inputString = message.content.trim();
             
-            // 1. Non-number text sent
             if (!/^\d+$/.test(inputString)) {
                 await message.react('❌').catch(() => {});
-                botDeletedMessageIds.add(message.id); // Register for safe bypass
+                botDeletedMessageIds.add(message.id);
                 setTimeout(() => {
                     message.delete().catch(() => botDeletedMessageIds.delete(message.id));
                 }, 3000);
@@ -387,19 +414,17 @@ client.on('messageCreate', async (message) => {
             }
 
             const parsedNumber = parseInt(inputString, 10);
-            const nextTargetNumber = countState.currentCount + 1;
+            const nextTargetNumber = Number(countState.currentCount) + 1;
 
-            // 2. User counted twice in a row
             if (message.author.id === countState.lastCounterId) {
                 await message.react('⚠️').catch(() => {});
-                botDeletedMessageIds.add(message.id); // Register for safe bypass
+                botDeletedMessageIds.add(message.id);
                 setTimeout(() => {
                     message.delete().catch(() => botDeletedMessageIds.delete(message.id));
                 }, 3000);
                 return;
             }
 
-            // 3. Perfect match
             if (parsedNumber === nextTargetNumber) {
                 countState.currentCount = nextTargetNumber;
                 countState.lastCounterId = message.author.id;
@@ -413,14 +438,13 @@ client.on('messageCreate', async (message) => {
                 }
                 return;
             }
-            // 4. Wrong number input
+
             await message.react('❌').catch(() => {});
-            botDeletedMessageIds.add(message.id); // Register for safe bypass
+            botDeletedMessageIds.add(message.id);
             setTimeout(() => {
                 message.delete().catch(() => botDeletedMessageIds.delete(message.id));
             }, 3000);
-            return; // ✨ Add this to cleanly stop execution
-
+            return;
 
         } catch (e) {
             console.error('Error handling counting system sequence:', e);

@@ -29,65 +29,64 @@ app.get('/', (req, res) => res.send('Guess The Location & Counting Engines Activ
 const locationChannelId = '1506139329536327765'; 
 const countingChannelId = '1513457479042990100'; 
 const staffRoleId = '1514130861568819242'; 
-// 🌎 100% WORKING STATIC GEOGUESSR GAME POOL (IMMUNE TO BLOCKS)
+
+// 🌎 STATIC GEOGUESSR GAME POOL
 const pool = [
     // 🇫🇷 FRANCE
-    { country: 'France', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/St_Flour_An_Alley_Way_-_geograph.org.uk_-_1200384.jpg/800px-St_Flour_An_Alley_Way_-_geograph.org.uk_-_1200384.jpg' }, // Generic cobblestone alley
-    { country: 'France', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/An_old_French_country_road_-_geograph.org.uk_-_2432822.jpg/800px-An_old_French_country_road_-_geograph.org.uk_-_2432822.jpg' }, // Empty countryside road
+    { country: 'France', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/St_Flour_An_Alley_Way_-_geograph.org.uk_-_1200384.jpg/800px-St_Flour_An_Alley_Way_-_geograph.org.uk_-_1200384.jpg' }, 
+    { country: 'France', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/An_old_French_country_road_-_geograph.org.uk_-_2432822.jpg/800px-An_old_French_country_road_-_geograph.org.uk_-_2432822.jpg' }, 
 
     // 🇨🇳 CHINA
-    { country: 'China', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Wuyuan_Jiangxi_China_Rural-Landscape-01.jpg/800px-Wuyuan_Jiangxi_China_Rural-Landscape-01.jpg' }, // Rural terraced mountainside village
-    { country: 'China', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Foggy_mountains_near_Guilin%2C_China.jpg/800px-Foggy_mountains_near_Guilin%2C_China.jpg' }, // Misty mountain peaks
+    { country: 'China', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Wuyuan_Jiangxi_China_Rural-Landscape-01.jpg/800px-Wuyuan_Jiangxi_China_Rural-Landscape-01.jpg' }, 
+    { country: 'China', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Foggy_mountains_near_Guilin%2C_China.jpg/800px-Foggy_mountains_near_Guilin%2C_China.jpg' }, 
 
     // 🇯🇵 JAPAN
-    { country: 'Japan', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Japanese_suburbs_at_dusk.jpg/800px-Japanese_suburbs_at_dusk.jpg' }, // Dimly lit generic suburban street corner
-    { country: 'Japan', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Forest_road_in_Japan.jpg/800px-Forest_road_in_Japan.jpg' }, // Deep mossy mountain forest path
+    { country: 'Japan', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Japanese_suburbs_at_dusk.jpg/800px-Japanese_suburbs_at_dusk.jpg' }, 
+    { country: 'Japan', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Forest_road_in_Japan.jpg/800px-Forest_road_in_Japan.jpg' }, 
 
     // 🇪🇬 EGYPT
-    { country: 'Egypt', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Streets_of_Cairo%2C_Egypt.jpg/800px-Streets_of_Cairo%2C_Egypt.jpg' }, // Crowded local market street
-    { country: 'Egypt', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Sinai_Desert_Road_Egypt.jpg/800px-Sinai_Desert_Road_Egypt.jpg' }, // Desolate desert mountain pass road
+    { country: 'Egypt', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Streets_of_Cairo%2C_Egypt.jpg/800px-Streets_of_Cairo%2C_Egypt.jpg' }, 
+    { country: 'Egypt', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Sinai_Desert_Road_Egypt.jpg/800px-Sinai_Desert_Road_Egypt.jpg' }, 
 
     // 🇺🇸 AMERICA
-    { country: 'America', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Empty_highway_in_the_United_States.jpg/800px-Empty_highway_in_the_United_States.jpg' }, // Long flat highway line through plains
-    { country: 'America', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Forest_road_in_Oregon.jpg/800px-Forest_road_in_Oregon.jpg' }, // Misty pine forest road
+    { country: 'America', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Empty_highway_in_the_United_States.jpg/800px-Empty_highway_in_the_United_States.jpg' }, 
+    { country: 'America', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Forest_road_in_Oregon.jpg/800px-Forest_road_in_Oregon.jpg' }, 
 
     // 🇷🇺 RUSSIA
-    { country: 'Russia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Siberian_winter_road_near_Tomsk.jpg/800px-Siberian_winter_road_near_Tomsk.jpg' }, // Snow-covered road through a birch forest
-    { country: 'Russia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Brutalist_buildings_in_Russia.jpg/800px-Brutalist_buildings_in_Russia.jpg' }, // Grey concrete brutalist block apartment buildings
+    { country: 'Russia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Siberian_winter_road_near_Tomsk.jpg/800px-Siberian_winter_road_near_Tomsk.jpg' }, 
+    { country: 'Russia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Brutalist_buildings_in_Russia.jpg/800px-Brutalist_buildings_in_Russia.jpg' }, 
 
     // 🇲🇽 MEXICO
-    { country: 'Mexico', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Guanajuato_street_scene.jpg/800px-Guanajuato_street_scene.jpg' }, // Narrow, steep colorful town street
-    { country: 'Mexico', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Baja_California_Desert_Road.jpg/800px-Baja_California_Desert_Road.jpg' }, // Flat desert highway lined with cacti
+    { country: 'Mexico', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Guanajuato_street_scene.jpg/800px-Guanajuato_street_scene.jpg' }, 
+    { country: 'Mexico', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Baja_California_Desert_Road.jpg/800px-Baja_California_Desert_Road.jpg' }, 
 
     // 🇲🇦 MOROCCO
-    { country: 'Morocco', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Alley_in_the_Medina_of_Fez%2C_Morocco.jpg/800px-Alley_in_the_Medina_of_Fez%2C_Morocco.jpg' }, // Ancient plaster city alleyway
-    { country: 'Morocco', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Atlas_Mountains_valley_village_Morocco.jpg/800px-Atlas_Mountains_valley_village_Morocco.jpg' }, // Earthen clay village in dry hills
+    { country: 'Morocco', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Alley_in_the_Medina_of_Fez%2C_Morocco.jpg/800px-Alley_in_the_Medina_of_Fez%2C_Morocco.jpg' }, 
+    { country: 'Morocco', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Atlas_Mountains_valley_village_Morocco.jpg/800px-Atlas_Mountains_valley_village_Morocco.jpg' }, 
 
     // 🇧🇩 BANGLADESH
-    { country: 'Bangladesh', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Rural_landscape_of_Bangladesh.jpg/800px-Rural_landscape_of_Bangladesh.jpg' }, // Lush, vibrant green wetlands and palms
-    { country: 'Bangladesh', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Dhaka_streets_and_rickshaws.jpg/800px-Dhaka_streets_and_rickshaws.jpg' }, // Chaotic inner-city street packed with colorful cycle-rickshaws
+    { country: 'Bangladesh', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Rural_landscape_of_Bangladesh.jpg/800px-Rural_landscape_of_Bangladesh.jpg' }, 
+    { country: 'Bangladesh', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Dhaka_streets_and_rickshaws.jpg/800px-Dhaka_streets_and_rickshaws.jpg' }, 
 
     // 🇴🇲 OMAN
-    { country: 'Oman', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Wadi_Shab_Oman_mountain_canyon.jpg/800px-Wadi_Shab_Oman_mountain_canyon.jpg' }, // Rocky desert limestone canyon river
-    { country: 'Oman', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Desert_highway_near_Salalah%2C_Oman.jpg/800px-Desert_highway_near_Salalah%2C_Oman.jpg' }, // Coastal desert highway cutting through light sand dunes
+    { country: 'Oman', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Wadi_Shab_Oman_mountain_canyon.jpg/800px-Wadi_Shab_Oman_mountain_canyon.jpg' }, 
+    { country: 'Oman', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Desert_highway_near_Salalah%2C_Oman.jpg/800px-Desert_highway_near_Salalah%2C_Oman.jpg' }, 
 
     // 🇲🇳 MONGOLIA
-    { country: 'Mongolia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Mongolian_steppe_dirt_road.jpg/800px-Mongolian_steppe_dirt_road.jpg' }, // Empty dirt path spanning endless flat grasslands
-    { country: 'Mongolia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Yurts_in_the_Mongolian_countryside.jpg/800px-Yurts_in_the_Mongolian_countryside.jpg' }, // Traditional round nomadic tents in an empty valley
+    { country: 'Mongolia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Mongolian_steppe_dirt_road.jpg/800px-Mongolian_steppe_dirt_road.jpg' }, 
+    { country: 'Mongolia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Yurts_in_the_Mongolian_countryside.jpg/800px-Yurts_in_the_Mongolian_countryside.jpg' }, 
 
     // 🇵🇪 PERU
-    { country: 'Peru', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Andes_mountain_pass_road_Peru.jpg/800px-Andes_mountain_pass_road_Peru.jpg' }, // Extremely high-altitude mountain dirt switchbacks
-    { country: 'Peru', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Inca_stone_walls_in_valley_Peru.jpg/800px-Inca_stone_walls_in_valley_Peru.jpg' }, // Rural ancient dry-stone wall boundaries
+    { country: 'Peru', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Andes_mountain_pass_road_Peru.jpg/800px-Andes_mountain_pass_road_Peru.jpg' }, 
+    { country: 'Peru', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Inca_stone_walls_in_valley_Peru.jpg/800px-Inca_stone_walls_in_valley_Peru.jpg' }, 
 
     // 🇮🇸 ICELAND
-    { country: 'Iceland', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Lava_fields_of_Iceland.jpg/800px-Lava_fields_of_Iceland.jpg' }, // Volcanic moss-covered jagged black lava rock fields
-    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1504893524553-ac55fce698be?w=800' }, // (Fallback) Empty gravel road against a dark green foggy ridge
-
-    // 🇨🇭 SWITZERLAND
-    { country: 'Switzerland', url: '
+    { country: 'Iceland', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Lava_fields_of_Iceland.jpg/800px-Lava_fields_of_Iceland.jpg' }, 
+    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1504893524553-ac55fce698be?w=800' }
+];
 
 // 🎮 LOCATION STATE CONTROLLERS
-let lastPickedCountry = ''; // Prevents the same country from appearing twice in a row
+let lastPickedCountry = ''; 
 
 let currentRound = {
     id: 0, 
@@ -123,10 +122,9 @@ function saveJSON(file, data) {
 let countState = loadJSON('./counting.json', { currentCount: 55, lastCounterId: null });
 let countingLock = false; 
 
-// Track automated bot deletions to prevent the ghost detector from firing on rule breakers
 const botDeletedMessageIds = new Set();
+const botLoggedMessageIds = new Set(); 
 
-// Safely delete messages without crashing on missing message objects
 async function safeDelete(channel, messageId) {
     if (!channel || !messageId) return;
     try {
@@ -135,18 +133,15 @@ async function safeDelete(channel, messageId) {
     } catch (e) {}
 }
 
-// ────────────────────────────────────────────────────────
-// LOCATION GAME ENGINE: ROUND MANAGER
-// ────────────────────────────────────────────────────────
 async function startNewRound(channel) {
     if (!channel) return;
     try {
-       let selection;
-do {
-    selection = pool[Math.floor(Math.random() * pool.length)];
-} while (selection.country === lastPickedCountry && pool.length > 1);
+        let selection;
+        do {
+            selection = pool[Math.floor(Math.random() * pool.length)];
+        } while (selection.country === lastPickedCountry && pool.length > 1);
 
-lastPickedCountry = selection.country; // Update the history tracker
+        lastPickedCountry = selection.country; 
 
         currentRound.id = Date.now(); 
         currentRound.country = selection.country;
@@ -188,7 +183,14 @@ client.once('ready', async () => {
                 .setDescription('View the top 10 players on the Location Leaderboard'),
             new SlashCommandBuilder()
                 .setName('restart_game')
-                .setDescription('Force-skips the current location round (Staff Only)')
+                .setDescription('Force-skips the current location round (Staff Only)'),
+            new SlashCommandBuilder()
+                .setName('view_count_number')
+                .setDescription('Displays the precise number that needs to be sent next.'),
+            new SlashCommandBuilder()
+                .setName('set_count_number')
+                .setDescription('Overrides and forces the required counting baseline (Staff Only).')
+                .addIntegerOption(option => option.setName('number').setDescription('The next target number users must type.').setRequired(true))
         ].map(command => command.toJSON());
 
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
@@ -217,7 +219,7 @@ client.once('ready', async () => {
 });
 
 // ────────────────────────────────────────────────────────
-// INTERACTION CONTROLLER (BUTTONS & LEADERBOARDS)
+// INTERACTION CONTROLLER (BUTTONS, LEADERBOARDS & COMMANDS)
 // ────────────────────────────────────────────────────────
 client.on('interactionCreate', async (interaction) => {
     try {
@@ -249,7 +251,6 @@ client.on('interactionCreate', async (interaction) => {
                     return interaction.reply({ content: '⚠️ You do not have the required staff role to run this command.', ephemeral: true });
                 }
 
-                // FIX: Complete state release on forceful engine clear
                 currentRound.active = false;
                 currentRound.processingPayout = false;
                 const interactionChannel = interaction.channel;
@@ -260,6 +261,37 @@ client.on('interactionCreate', async (interaction) => {
                 await interaction.reply({ content: '🔄 Staff member forced a round restart. Spinning up a new location...', ephemeral: true });
                 await startNewRound(interactionChannel);
                 return;
+            }
+
+            if (interaction.commandName === 'view_count_number') {
+                const nextTargetNumber = Number(countState.currentCount) + 1;
+
+                const countEmbed = new EmbedBuilder()
+                    .setColor('#5865F2')
+                    .setTitle('🔢 Current Counting Number')
+                    .setDescription(`The Counting number is currently **${nextTargetNumber}**`)
+                    .setFooter({ text: 'Type this exact number in the counting channel to continue!' });
+
+                return interaction.reply({ embeds: [countEmbed], ephemeral: false });
+            }
+
+            if (interaction.commandName === 'set_count_number') {
+                if (!interaction.member.roles.cache.has(staffRoleId)) {
+                    return interaction.reply({ content: '❌ You do not have the required staff permission to modify the count.', ephemeral: true });
+                }
+
+                const requestedNumber = interaction.options.getInteger('number');
+                
+                countState = {
+                    currentCount: requestedNumber - 1,
+                    lastCounterId: null
+                };
+                saveJSON('./counting.json', countState);
+
+                return interaction.reply({ 
+                    content: `✅ Successfully set the number **${requestedNumber}**. Head to the counting channel and continue normally!`, 
+                    ephemeral: true 
+                });
             }
         }
 
@@ -328,23 +360,23 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ────────────────────────────────────────────────────────
-// GHOST-DELETE DETECTOR: CALLS OUT ONLY THE LATEST NUMBER
+// GHOST-DELETE DETECTOR
 // ────────────────────────────────────────────────────────
 client.on('messageDelete', async (message) => {
     if (message.channelId !== countingChannelId) return;
 
     try {
-        if (message.partial) return;
-
+        if (botLoggedMessageIds.has(message.id)) {
+            botLoggedMessageIds.delete(message.id);
+            return;
+        }
         if (botDeletedMessageIds.has(message.id)) {
             botDeletedMessageIds.delete(message.id);
             return;
         }
-
-        if (message.author?.bot) return;
+        if (message.partial || message.author?.bot) return;
 
         const inputString = message.content?.trim();
-        
         if (inputString && /^\d+$/.test(inputString)) {
             const targetChannel = await client.channels.fetch(countingChannelId).catch(() => null);
             if (!targetChannel) return;
@@ -352,18 +384,18 @@ client.on('messageDelete', async (message) => {
             const recentMessages = await targetChannel.messages.fetch({ limit: 5 }).catch(() => null);
             if (recentMessages && recentMessages.size > 0) {
                 const absoluteLatestMessage = recentMessages.first();
-                
                 if (absoluteLatestMessage && absoluteLatestMessage.createdTimestamp > message.createdTimestamp) {
                     return; 
                 }
             }
 
             const userPing = message.author ? `<@${message.author.id}>` : 'Someone';
-
-            await targetChannel.send({
+            const logMsg = await targetChannel.send({
                 content: `${userPing}: ${inputString}`,
                 allowedMentions: { parse: ['users'] }
-            });
+            }).catch(() => null);
+
+            if (logMsg) botLoggedMessageIds.add(logMsg.id);
         }
     } catch (e) {
         console.error('Error handling smart ghost-delete detector:', e);
@@ -376,8 +408,7 @@ client.on('messageDelete', async (message) => {
 client.on('messageUpdate', async (oldMessage, newMessage) => {
     if (newMessage.channelId !== countingChannelId) return;
     try {
-        if (newMessage.partial) return;
-        if (newMessage.author?.bot) return;
+        if (newMessage.partial || newMessage.author?.bot) return;
         
         botDeletedMessageIds.add(newMessage.id);
         await newMessage.delete().catch(() => {
@@ -391,8 +422,6 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 // ────────────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
     if (message.author.id === client.user.id) return;
-    
-    // FIX: Allow Default messages (0) and Inline Replies (19) to feed through game listeners
     if (message.type !== 0 && message.type !== 19) return; 
 
     // PATHWAY A: LOCATION CHANNEL
@@ -405,7 +434,8 @@ client.on('messageCreate', async (message) => {
             return setTimeout(() => message.delete().catch(() => {}), 500);
         }
          
-        const cleanContent = message.content.replace(/<@!?\d+>/g, '').trim();
+        const safeText = message.content || '';
+        const cleanContent = safeText.replace(/<@!?\d+>/g, '').trim();
         const guess = cleanContent.toLowerCase();
         const solution = currentRound.country.toLowerCase();
 
@@ -435,15 +465,14 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
-               try {
+        try {
             await message.react('❌').catch(() => {});
             setTimeout(() => message.delete().catch(() => {}), 3000);
         } catch (e) {}
-        return; // Stops the event handler early since the wrong guess was already managed
+        return; 
     }
 
-
-    // PATHWAY B: COUNTING CHANNEL
+    // PATHWAY B: COUNTING CHANNEL (HARDENED AGAINST RACE CONDITIONS)
     if (message.channelId === countingChannelId) {
         if (message.author.bot) {
             return message.delete().catch(() => {});
@@ -456,7 +485,8 @@ client.on('messageCreate', async (message) => {
         countingLock = true; 
 
         try {
-            const inputString = message.content.trim();
+            const safeText = message.content || '';
+            const inputString = safeText.trim();
             
             if (!/^\d+$/.test(inputString)) {
                 await message.react('❌').catch(() => {});

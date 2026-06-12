@@ -105,12 +105,25 @@ let skipTrackers = {};
 const writeQueues = {};
 function loadJSON(file, defaultData = {}) {
     try {
-        if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify(defaultData));
-        return JSON.parse(fs.readFileSync(file, 'utf8'));
+        // 1. Check if the database file actually exists
+        if (!fs.existsSync(file)) {
+            fs.writeFileSync(file, JSON.stringify(defaultData, null, 4));
+            return defaultData;
+        }
+        
+        // 2. Read the existing data from the disk safely
+        const data = fs.readFileSync(file, 'utf8').trim();
+        
+        // 3. If the file is completely empty, don't crash, return defaults
+        if (!data) return defaultData;
+        
+        return JSON.parse(data);
     } catch (e) {
+        console.error(`⚠️ Failed to read data from ${file}:`, e);
         return defaultData;
     }
 }
+
 
 function saveJSON(file, data) {
     if (!writeQueues[file]) writeQueues[file] = Promise.resolve();
@@ -173,9 +186,13 @@ async function startNewRound(channel) {
 // ────────────────────────────────────────────────────────
 // APP BOOTSTRAP INITIALIZATION LOOP
 // ────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────
+// HARDENED APP BOOTSTRAP INITIALIZATION LOOP
+// ────────────────────────────────────────────────────────
 client.once('ready', async () => {
     console.log(`🤖 Unified Game Engine connected as ${client.user.tag}`);
     
+    // 1. Deploy Slash Commands Safely
     try {
         const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
         const commands = [
@@ -200,6 +217,32 @@ client.once('ready', async () => {
         console.error('Failed to register slash commands:', cmdErr);
     }
     
+    // 2. Sync and Recover Counting State from Channel History
+    try {
+        const countingChannel = await client.channels.fetch(countingChannelId).catch(() => null);
+        if (countingChannel && countingChannel.isTextBased()) {
+            const lastMessages = await countingChannel.messages.fetch({ limit: 5 }).catch(() => []);
+            
+            // Look for the absolute last valid number sent by a real user in the channel
+            const lastValidUserMsg = lastMessages.find(m => !m.author.bot && /^\d+$/.test(m.content?.trim()));
+            
+            if (lastValidUserMsg) {
+                const structuralCount = parseInt(lastValidUserMsg.content.trim(), 10);
+                
+                // If the channel history has a higher number than the file, automatically heal the database
+                if (structuralCount > countState.currentCount) {
+                    console.log(`🔢 Counting recovery active: Synced database to last channel message (#${structuralCount})`);
+                    countState.currentCount = structuralCount;
+                    countState.lastCounterId = lastValidUserMsg.author.id;
+                    saveJSON('./counting.json', countState);
+                }
+            }
+        }
+    } catch (countErr) {
+        console.error('Failed to auto-heal counting state on boot:', countErr);
+    }
+    
+    // 3. Location Engine Sweep
     try {
         const locationChannel = await client.channels.fetch(locationChannelId).catch(() => null);
         if (locationChannel && locationChannel.isTextBased()) {

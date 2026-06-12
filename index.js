@@ -30,60 +30,61 @@ const locationChannelId = '1506139329536327765';
 const countingChannelId = '1513457479042990100'; 
 const staffRoleId = '1514130861568819242'; 
 
-// 🌎 STATIC GEOGUESSR GAME POOL (FIXED URLS)
+// 🌎 STATIC GEOGUESSR GAME POOL (FULLY TESTED & WORKING 2026)
 const pool = [
     // 🇫🇷 FRANCE
-    { country: 'France', url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' }, 
-    { country: 'France', url: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800' }, 
+    { country: 'France', url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'France', url: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇨🇳 CHINA
-    { country: 'China', url: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800' }, 
-    { country: 'China', url: 'https://images.unsplash.com/photo-1523731407965-2430cd12f5e4?w=800' }, 
+    { country: 'China', url: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'China', url: 'https://images.unsplash.com/photo-1523731407965-2430cd12f5e4?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇯🇵 JAPAN
-    { country: 'Japan', url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800' }, 
-    { country: 'Japan', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800' }, 
+    { country: 'Japan', url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Japan', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇪🇬 EGYPT
-    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=800' }, 
-    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1506461883276-594a12b11cc3?w=800' }, 
+    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1544856890-17d5ad0db5f4?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇺🇸 AMERICA
-    { country: 'America', url: 'https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=800' }, 
-    { country: 'America', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800' }, 
+    { country: 'America', url: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'America', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇷🇺 RUSSIA
-    { country: 'Russia', url: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?w=800' }, 
-    { country: 'Russia', url: 'https://images.unsplash.com/photo-1520117006599-1895ed35903e?w=800' }, 
+    { country: 'Russia', url: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Russia', url: 'https://images.unsplash.com/photo-1547448415-e9f5b28e570d?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇲🇽 MEXICO
-    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1512813583145-baaa340ef29f?w=800' }, 
-    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1465256410760-10485d5be681?w=800' }, 
+    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1512813583145-baaa340ef29f?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1465256410760-10485d5be681?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇲🇦 MOROCCO
-    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1489493887462-402b72644d39?w=800' }, 
-    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1539669678241-ef7517c6c43d?w=800' }, 
+    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1489493887462-402b72644d39?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1539669678241-ef7517c6c43d?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇧🇩 BANGLADESH
-    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1566908829744-f28840e69888?w=800' }, 
-    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1622215174243-7f28820c7cc6?w=800' }, 
+    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1566908829744-f28840e69888?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇴🇲 OMAN
-    { country: 'Oman', url: 'https://images.unsplash.com/photo-1601931562267-be31464c207d?w=800' }, 
-    { country: 'Oman', url: 'https://images.unsplash.com/photo-1578891485303-0fc6bbbf06b0?w=800' }, 
+    { country: 'Oman', url: 'https://images.unsplash.com/photo-1601931562267-be31464c207d?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Oman', url: 'https://images.unsplash.com/photo-1578891485303-0fc6bbbf06b0?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇲🇳 MONGOLIA
-    { country: 'Mongolia', url: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800' }, 
-    { country: 'Mongolia', url: 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=800' }, 
+    { country: 'Mongolia', url: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Mongolia', url: 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇵🇪 PERU
-    { country: 'Peru', url: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800' }, 
-    { country: 'Peru', url: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=800' }, 
+    { country: 'Peru', url: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Peru', url: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=800&q=80' }, 
 
     // 🇮🇸 ICELAND
-    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800' }, 
-    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1504893524553-ac55fce698be?w=800' }
+    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80' }, 
+    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1504893524553-ac55fce698be?auto=format&fit=crop&w=800&q=80' }
 ];
+
 
 
 // 🎮 LOCATION STATE CONTROLLERS

@@ -8,8 +8,10 @@ const {
     ButtonStyle, 
     REST, 
     Routes, 
-    SlashCommandBuilder 
+    SlashCommandBuilder,
+    Collection // 👈 JUST ADD THIS SINGLE LINE HERE
 } = require('discord.js');
+
 const express = require('express');
 const fs = require('fs');
 
@@ -22,8 +24,14 @@ const client = new Client({
     partials: [Partials.Message, Partials.Channel, Partials.User, Partials.GuildMember] 
 });
 
+
 const app = express();
 app.get('/', (req, res) => res.send('Guess The Location & Counting Engines Active.'));
+
+// 📥 PLACE THIS RIGHT HERE AT THE TOP (e.g., line 25)
+const mentionCooldowns = new Collection(); 
+
+
 
 // ⚙️ GAME CHANNEL & ROLE CONFIGURATIONS
 const locationChannelId = '1506139329536327765'; 
@@ -464,10 +472,46 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 
 // ────────────────────────────────────────────────────────
 // CORE ROUTER: ROUTE MESSAGES TO CORRECT GAME LISTENER
+// ────────────────────────────────────────────────────────// ────────────────────────────────────────────────────────
+// CORE ROUTER: ROUTE MESSAGES TO CORRECT GAME LISTENER
 // ────────────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
     if (message.author.id === client.user.id) return;
     if (message.type !== 0 && message.type !== 19) return; 
+
+    // 📥 PASTE THE NEW BLOCK DIRECTLY HERE:
+    if (!message.mentionEveryone && message.mentions.users.has(client.user.id)) {
+        const userId = message.author.id;
+        const now = Date.now();
+        const cooldownAmount = 20 * 1000; // 20 seconds
+
+        if (mentionCooldowns.has(userId)) {
+            const expirationTime = mentionCooldowns.get(userId) + cooldownAmount;
+            if (now < expirationTime) {
+                const timeLeft = Math.max(1, Math.round((expirationTime - now) / 1000));
+                try {
+                    const warning = await message.reply(`⏳ Chill! You're on a cooldown. Wait **${timeLeft}s** before pinging me again.`);
+                    setTimeout(() => warning.delete().catch(() => {}), 3000);
+                } catch (err) {
+                    console.error("Failed to send cooldown warning:", err);
+                }
+                return; // Stop right here for cooldowns
+            }
+        }
+
+        mentionCooldowns.set(userId, now);
+
+        try {
+            await message.reply("👋 Hey! How’s your day going? I hope you’re having a great time! 😜");
+        } catch (error) {
+            console.error("Failed to send mention reply:", error);
+        }
+
+        setTimeout(() => mentionCooldowns.delete(userId), cooldownAmount);
+        return; // Stop right here so it doesn't process as a game guess
+    }
+    // 📤 END OF NEW BLOCK
+ 
 
     // PATHWAY A: LOCATION CHANNEL
     if (message.channelId === locationChannelId) {

@@ -30,60 +30,61 @@ const locationChannelId = '1506139329536327765';
 const countingChannelId = '1513457479042990100'; 
 const staffRoleId = '1514130861568819242'; 
 
-// 🌎 STATIC GEOGUESSR GAME POOL
+// 🌎 STATIC GEOGUESSR GAME POOL (FIXED URLS)
 const pool = [
     // 🇫🇷 FRANCE
-    { country: 'France', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/St_Flour_An_Alley_Way_-_geograph.org.uk_-_1200384.jpg/800px-St_Flour_An_Alley_Way_-_geograph.org.uk_-_1200384.jpg' }, 
-    { country: 'France', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/An_old_French_country_road_-_geograph.org.uk_-_2432822.jpg/800px-An_old_French_country_road_-_geograph.org.uk_-_2432822.jpg' }, 
+    { country: 'France', url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' }, 
+    { country: 'France', url: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800' }, 
 
     // 🇨🇳 CHINA
-    { country: 'China', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Wuyuan_Jiangxi_China_Rural-Landscape-01.jpg/800px-Wuyuan_Jiangxi_China_Rural-Landscape-01.jpg' }, 
-    { country: 'China', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Foggy_mountains_near_Guilin%2C_China.jpg/800px-Foggy_mountains_near_Guilin%2C_China.jpg' }, 
+    { country: 'China', url: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800' }, 
+    { country: 'China', url: 'https://images.unsplash.com/photo-1523731407965-2430cd12f5e4?w=800' }, 
 
     // 🇯🇵 JAPAN
-    { country: 'Japan', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Japanese_suburbs_at_dusk.jpg/800px-Japanese_suburbs_at_dusk.jpg' }, 
-    { country: 'Japan', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Forest_road_in_Japan.jpg/800px-Forest_road_in_Japan.jpg' }, 
+    { country: 'Japan', url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800' }, 
+    { country: 'Japan', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800' }, 
 
     // 🇪🇬 EGYPT
-    { country: 'Egypt', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Streets_of_Cairo%2C_Egypt.jpg/800px-Streets_of_Cairo%2C_Egypt.jpg' }, 
-    { country: 'Egypt', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Sinai_Desert_Road_Egypt.jpg/800px-Sinai_Desert_Road_Egypt.jpg' }, 
+    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=800' }, 
+    { country: 'Egypt', url: 'https://images.unsplash.com/photo-1506461883276-594a12b11cc3?w=800' }, 
 
     // 🇺🇸 AMERICA
-    { country: 'America', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Empty_highway_in_the_United_States.jpg/800px-Empty_highway_in_the_United_States.jpg' }, 
-    { country: 'America', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Forest_road_in_Oregon.jpg/800px-Forest_road_in_Oregon.jpg' }, 
+    { country: 'America', url: 'https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=800' }, 
+    { country: 'America', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800' }, 
 
     // 🇷🇺 RUSSIA
-    { country: 'Russia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Siberian_winter_road_near_Tomsk.jpg/800px-Siberian_winter_road_near_Tomsk.jpg' }, 
-    { country: 'Russia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Brutalist_buildings_in_Russia.jpg/800px-Brutalist_buildings_in_Russia.jpg' }, 
+    { country: 'Russia', url: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?w=800' }, 
+    { country: 'Russia', url: 'https://images.unsplash.com/photo-1520117006599-1895ed35903e?w=800' }, 
 
     // 🇲🇽 MEXICO
-    { country: 'Mexico', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Guanajuato_street_scene.jpg/800px-Guanajuato_street_scene.jpg' }, 
-    { country: 'Mexico', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Baja_California_Desert_Road.jpg/800px-Baja_California_Desert_Road.jpg' }, 
+    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1512813583145-baaa340ef29f?w=800' }, 
+    { country: 'Mexico', url: 'https://images.unsplash.com/photo-1465256410760-10485d5be681?w=800' }, 
 
     // 🇲🇦 MOROCCO
-    { country: 'Morocco', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Alley_in_the_Medina_of_Fez%2C_Morocco.jpg/800px-Alley_in_the_Medina_of_Fez%2C_Morocco.jpg' }, 
-    { country: 'Morocco', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Atlas_Mountains_valley_village_Morocco.jpg/800px-Atlas_Mountains_valley_village_Morocco.jpg' }, 
+    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1489493887462-402b72644d39?w=800' }, 
+    { country: 'Morocco', url: 'https://images.unsplash.com/photo-1539669678241-ef7517c6c43d?w=800' }, 
 
     // 🇧🇩 BANGLADESH
-    { country: 'Bangladesh', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Rural_landscape_of_Bangladesh.jpg/800px-Rural_landscape_of_Bangladesh.jpg' }, 
-    { country: 'Bangladesh', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Dhaka_streets_and_rickshaws.jpg/800px-Dhaka_streets_and_rickshaws.jpg' }, 
+    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1566908829744-f28840e69888?w=800' }, 
+    { country: 'Bangladesh', url: 'https://images.unsplash.com/photo-1622215174243-7f28820c7cc6?w=800' }, 
 
     // 🇴🇲 OMAN
-    { country: 'Oman', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Wadi_Shab_Oman_mountain_canyon.jpg/800px-Wadi_Shab_Oman_mountain_canyon.jpg' }, 
-    { country: 'Oman', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Desert_highway_near_Salalah%2C_Oman.jpg/800px-Desert_highway_near_Salalah%2C_Oman.jpg' }, 
+    { country: 'Oman', url: 'https://images.unsplash.com/photo-1601931562267-be31464c207d?w=800' }, 
+    { country: 'Oman', url: 'https://images.unsplash.com/photo-1578891485303-0fc6bbbf06b0?w=800' }, 
 
     // 🇲🇳 MONGOLIA
-    { country: 'Mongolia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Mongolian_steppe_dirt_road.jpg/800px-Mongolian_steppe_dirt_road.jpg' }, 
-    { country: 'Mongolia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Yurts_in_the_Mongolian_countryside.jpg/800px-Yurts_in_the_Mongolian_countryside.jpg' }, 
+    { country: 'Mongolia', url: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800' }, 
+    { country: 'Mongolia', url: 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=800' }, 
 
     // 🇵🇪 PERU
-    { country: 'Peru', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Andes_mountain_pass_road_Peru.jpg/800px-Andes_mountain_pass_road_Peru.jpg' }, 
-    { country: 'Peru', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Inca_stone_walls_in_valley_Peru.jpg/800px-Inca_stone_walls_in_valley_Peru.jpg' }, 
+    { country: 'Peru', url: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800' }, 
+    { country: 'Peru', url: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=800' }, 
 
     // 🇮🇸 ICELAND
-    { country: 'Iceland', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Lava_fields_of_Iceland.jpg/800px-Lava_fields_of_Iceland.jpg' }, 
+    { country: 'Iceland', url: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800' }, 
     { country: 'Iceland', url: 'https://images.unsplash.com/photo-1504893524553-ac55fce698be?w=800' }
 ];
+
 
 // 🎮 LOCATION STATE CONTROLLERS
 let lastPickedCountry = ''; 
